@@ -54,8 +54,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Load ML model data
-Movie = pickle.load(open('Artificats/Movie_list.pkl', 'rb'))
-Similarity = pickle.load(open('Artificats/Similarity.pkl', 'rb'))
+Movie = pickle.load(open('Artifacts/Movie_list.pkl', 'rb'))
+Similarity = pickle.load(open('Artifacts/Similarity.pkl', 'rb'))
 Movie_List = Movie['title'].values
 
 # Configure retry strategy

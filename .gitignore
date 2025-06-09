@@ -7,8 +7,6 @@ __pycache__/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# Pickle files (often large or may contain binary data)
-*.pkl
 
 # Data files (optional if you want to keep them private or large)
 Data/*.csv

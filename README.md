@@ -39,3 +39,17 @@ Output:
 - The Matrix
 - Shutter Island
 - Memento
+
+
+# 🧠 ML Libraries Used
+- scikit-learn
+- nltk
+- pandas
+- numpy
+- streamlit
+
+📦 Dataset Source
+TMDB 5000 Movie Dataset: Kaggle
+
+🧑‍💻 Author
+Siddhant Rathod

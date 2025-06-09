@@ -2,8 +2,11 @@ import requests
 import streamlit as st
 import pickle
 import time
+import os
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from dotenv import load_dotenv
+load_dotenv()
 
 # Page configuration
 st.set_page_config(
@@ -75,7 +78,7 @@ def fetch_poster(movie_id):
         url = f"https://api.themoviedb.org/3/movie/{movie_id}?language=en-US"
         headers = {
             "accept": "application/json",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyNWUwOGQzYjEzNWIwN2NiMGUyYzcxYmE5NmQzNzE2MSIsIm5iZiI6MTc0OTMyNzg0OS4xNzEsInN1YiI6IjY4NDQ5ZmU5NGM5NmQ5MGI4OTM0MjFiMiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.CLjCnluFfEh5PaHzvvG-GUz0Jqe7TCnA6Yuo1TluY9U"
+            "Authorization": os.getenv("JWT_SECRET")
         }
         response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()

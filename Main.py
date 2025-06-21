@@ -205,8 +205,6 @@ st.markdown(
     <hr style="border: 0.5px solid #ccc;" />
     <div style="text-align: center; font-size: 14px; color: gray;">
         Made with ❤️ using <b>Python</b> & <b>Machine Learning</b> | Built by <a href="https://www.linkedin.com/in/siddhantrathod" target="_blank">Siddhant Rathod</a> <br>
-        Dataset: <a href="https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata" target="_blank">TMDB 5000 Movie Dataset</a> | Source Code Coming Soon on GitHub 🚀 <br>
-        &copy; 2025 MovieMatch | All Rights Reserved
     </div>
     """,
     unsafe_allow_html=True

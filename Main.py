@@ -74,8 +74,8 @@ Movie_List = Movie['title'].values
 
 # Configure retry strategy
 retry_strategy = Retry(
-    total=5,
-    backoff_factor=2,
+    total=3,
+    backoff_factor=1,
     status_forcelist=[429, 500, 502, 503, 504],
     allowed_methods=["HEAD", "GET", "OPTIONS"]
 )
@@ -84,35 +84,82 @@ session = requests.Session()
 session.mount("https://", adapter)
 session.mount("http://", adapter)
 
+# --- Pre-fetch and cache all poster URLs on startup ---
+@st.cache_data(ttl=86400) # Cache for 24 hours
+def build_poster_cache():
+    """Pre-fetches all movie posters and creates a local cache."""
+    poster_cache = {}
+    total_movies = len(Movie)
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-# ----------------------------
-# TMDB: Fetch Poster for Recs
-# ----------------------------
-def fetch_poster(movie_id):
+    for index, row in Movie.iterrows():
+        movie_title = row['title']
+        poster_url = fetch_poster_with_fallbacks(movie_title)
+        poster_cache[movie_title] = poster_url
+        
+        # Update progress bar
+        progress = (index + 1) / total_movies
+        progress_bar.progress(progress)
+        status_text.text(f"Caching posters... {index+1}/{total_movies}")
+
+    progress_bar.empty()
+    status_text.empty()
+    return poster_cache
+
+def fetch_poster_with_fallbacks(movie_title):
+    """
+    Fetch movie poster with multiple fallback options
+    """
+    # Use a public TMDB API key for search
+    public_api_key = "1b94fd19aee581580f557b35be07720"  # Public demo key
+    
+    # Method 1: Search by movie title
     try:
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}?language=en-US"
-        headers = {
-            "accept": "application/json",
-            "Authorization": os.getenv("JWT_SECRET")
+        search_url = f"https://api.themoviedb.org/3/search/movie"
+        params = {
+            "query": movie_title,
+            "api_key": public_api_key,
+            "language": "en-US"
         }
-        response = session.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        poster_path = data.get('poster_path')
-        if poster_path:
-            return f"https://image.tmdb.org/t/p/w500{poster_path}"
-        else:
-            return "https://via.placeholder.com/500x750?text=No+Poster"
-    except requests.exceptions.RequestException as e:
-        # Log error but don't print to avoid cluttering the UI
-        # print(f"Error fetching poster for movie_id {movie_id}: {e}")
-        time.sleep(2)  # Longer delay before next request
-        return "https://via.placeholder.com/500x750?text=No+Poster"
-    except Exception as e:
-        # Catch any other unexpected errors
-        time.sleep(2)
-        return "https://via.placeholder.com/500x750?text=Error"
+        response = session.get(search_url, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('results') and len(data['results']) > 0:
+                poster_path = data['results'][0].get('poster_path')
+                if poster_path:
+                    return f"https://image.tmdb.org/t/p/w500{poster_path}"
+    except Exception:
+        pass
+    
+    # Method 2: Try with user's personal TMDB API key if available
+    tmdb_api_key = os.getenv("TMDB_API_KEY")
+    if tmdb_api_key:
+        try:
+            search_url = f"https://api.themoviedb.org/3/search/movie"
+            params = {
+                "query": movie_title,
+                "api_key": tmdb_api_key,
+                "language": "en-US"
+            }
+            response = session.get(search_url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results') and len(data['results']) > 0:
+                    poster_path = data['results'][0].get('poster_path')
+                    if poster_path:
+                        return f"https://image.tmdb.org/t/p/w500{poster_path}"
+        except Exception:
+            pass
+    
+    # Method 3: Create a styled placeholder with movie title
+    # Clean the title for URL encoding
+    clean_title = movie_title.replace(":", "").replace("'", "").replace('"', "")
+    encoded_title = requests.utils.quote(clean_title[:30])  # Limit length
+    return f"https://via.placeholder.com/500x750/1E1E1E/FF4B4B?text={encoded_title}"
 
+# --- Build the cache when the app starts ---
+poster_cache = build_poster_cache()
 
 # ----------------------------
 # ML Model Recommender
@@ -123,9 +170,10 @@ def recommend(movie):
     recommended_movie_name = []
     recommended_movie_Poster = []
     for i in distances[1:6]:
-        movie_id = Movie.iloc[i[0]].movie_id
-        recommended_movie_name.append(Movie.iloc[i[0]].title)
-        recommended_movie_Poster.append(fetch_poster(movie_id))
+        movie_title = Movie.iloc[i[0]].title
+        recommended_movie_name.append(movie_title)
+        # Use cached poster fetching
+        recommended_movie_Poster.append(poster_cache.get(movie_title, f"https://via.placeholder.com/500x750/1E1E1E/FF4B4B?text=Not+Found"))
     return recommended_movie_name, recommended_movie_Poster
 
 
@@ -163,7 +211,7 @@ if 'recommendations' in st.session_state and isinstance(st.session_state.recomme
         with cols[i]:
             st.markdown(f"""
                 <div class='movie-card'>
-                    <img src='{posters[i]}' style='width: 100%; border-radius: 5px;'>
+                    <img src='{posters[i]}' style='width: 100%; border-radius: 5px;' alt='{names[i]}'>
                     <div class='movie-title'>{names[i]}</div>
                 </div>
             """, unsafe_allow_html=True)

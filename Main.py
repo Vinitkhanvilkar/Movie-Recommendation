@@ -3,14 +3,15 @@ import streamlit as st
 import pickle
 import time
 import os
+import numpy as np
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="Movie Recommendation System",
+    page_title="CineMatch",
     page_icon="./assets/Sic.ico",                      
     layout="wide"
 )
@@ -55,14 +56,28 @@ st.markdown("""
 
 # Load ML model data
 Movie = pickle.load(open('Artifacts/Movie_list.pkl', 'rb'))
-Similarity = pickle.load(open('Artifacts/Similarity.pkl', 'rb'))
+
+# Load split similarity matrices
+@st.cache_data
+def load_similarity_matrices():
+    """Load and combine the split similarity matrices"""
+    part1 = pickle.load(open('Artifacts/Similarity_part1.pkl', 'rb'))
+    part2 = pickle.load(open('Artifacts/Similarity_part2.pkl', 'rb'))
+    part3 = pickle.load(open('Artifacts/Similarity_part3.pkl', 'rb'))
+    
+    # Combine the parts back into the full similarity matrix
+    similarity = np.vstack([part1, part2, part3])
+    return similarity
+
+Similarity = load_similarity_matrices()
 Movie_List = Movie['title'].values
 
 # Configure retry strategy
 retry_strategy = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[429, 500, 502, 503, 504]
+    total=5,
+    backoff_factor=2,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["HEAD", "GET", "OPTIONS"]
 )
 adapter = HTTPAdapter(max_retries=retry_strategy)
 session = requests.Session()
@@ -80,7 +95,7 @@ def fetch_poster(movie_id):
             "accept": "application/json",
             "Authorization": os.getenv("JWT_SECRET")
         }
-        response = session.get(url, headers=headers, timeout=10)
+        response = session.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         data = response.json()
         poster_path = data.get('poster_path')
@@ -89,8 +104,13 @@ def fetch_poster(movie_id):
         else:
             return "https://via.placeholder.com/500x750?text=No+Poster"
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching poster for movie_id {movie_id}: {e}")
-        time.sleep(1)  # Add a small delay before next request
+        # Log error but don't print to avoid cluttering the UI
+        # print(f"Error fetching poster for movie_id {movie_id}: {e}")
+        time.sleep(2)  # Longer delay before next request
+        return "https://via.placeholder.com/500x750?text=No+Poster"
+    except Exception as e:
+        # Catch any other unexpected errors
+        time.sleep(2)
         return "https://via.placeholder.com/500x750?text=Error"
 
 
@@ -115,7 +135,8 @@ def recommend(movie):
 # Header with custom styling
 st.markdown("""
     <div style='text-align: center; padding: 20px;'>
-        <h1 style='color: #FF4B4B; font-size: 3em;'> MOVIE RECOMMENDATION SYSTEM</h1>
+        <h1 style='color: #FF4B4B; font-size: 3em;'> CINEMATCH</h1>
+        <h1 style='color: #FFFFFF; font-size: 2em;'> Movie Recommendation System</h1>
         <p style='color: #FFFFFF; font-size: 1.2em;'>Discover your next favorite movie!</p>
     </div>
 """, unsafe_allow_html=True)

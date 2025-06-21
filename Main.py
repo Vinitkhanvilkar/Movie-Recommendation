@@ -202,6 +202,8 @@ if 'recommendations' in st.session_state and isinstance(st.session_state.recomme
 # Footer
 st.markdown("""
     <div style='text-align: center; padding: 20px; margin-top: 50px;'>
-        <p style='color: #666666;'>Developed By Siddhant</p>
-    </div>
-""", unsafe_allow_html=True)
+        <p style='color: #666666;'>Made With 🤍 By Siddhant</p>
+    "
+    """,
+    unsafe_allow_html=True
+)

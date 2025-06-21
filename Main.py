@@ -11,7 +11,7 @@ load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="CineMatch",
+    page_title="MovieMatch",
     page_icon="./assets/Sic.ico",                      
     layout="wide"
 )
@@ -166,7 +166,7 @@ def recommend(movie):
 # Header with custom styling
 st.markdown("""
     <div style='text-align: center; padding: 20px;'>
-        <h1 style='color: #FF4B4B; font-size: 3em;'> CINEMATCH</h1>
+        <h1 style='color: #FF4B4B; font-size: 3em;'> MOVIEMATCH</h1>
         <h1 style='color: #FFFFFF; font-size: 2em;'> Movie Recommendation System</h1>
         <p style='color: #FFFFFF; font-size: 1.2em;'>Discover your next favorite movie!</p>
     </div>

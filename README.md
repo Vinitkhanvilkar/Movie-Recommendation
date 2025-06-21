@@ -1,6 +1,6 @@
-# 🎬 CineMatch – Movie Recommendation System
+# 🎬 MovieMatch – Movie Recommendation System
 
-CineMatch is a machine learning-based movie recommendation system built using Python. It leverages content-based filtering on movie metadata to recommend similar films based on user preferences.
+MovieMatch is a machine learning-based movie recommendation system built using Python. It leverages content-based filtering on movie metadata to recommend similar films based on user preferences.
 
 ---
 

@@ -10,6 +10,7 @@ __pycache__/
 
 # Data files (optional if you want to keep them private or large)
 Data/*.csv
+DEPLOYMENT.md
 
 # System files
 .DS_Store

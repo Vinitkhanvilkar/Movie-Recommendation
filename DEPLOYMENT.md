@@ -1,4 +1,4 @@
-# CineMatch Deployment Guide
+# MovieMatch Deployment Guide
 
 ## Streamlit Cloud Deployment
 

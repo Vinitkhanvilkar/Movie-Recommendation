@@ -84,29 +84,15 @@ session = requests.Session()
 session.mount("https://", adapter)
 session.mount("http://", adapter)
 
-# --- Pre-fetch and cache all poster URLs on startup ---
-@st.cache_data(ttl=86400) # Cache for 24 hours
-def build_poster_cache():
-    """Pre-fetches all movie posters and creates a local cache."""
-    poster_cache = {}
-    total_movies = len(Movie)
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+# Cache for poster URLs to avoid repeated API calls
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def get_cached_poster(movie_title):
+    """Get poster URL with on-demand caching to improve performance"""
+    return fetch_poster_with_fallbacks(movie_title)
 
-    for index, row in Movie.iterrows():
-        movie_title = row['title']
-        poster_url = fetch_poster_with_fallbacks(movie_title)
-        poster_cache[movie_title] = poster_url
-        
-        # Update progress bar
-        progress = (index + 1) / total_movies
-        progress_bar.progress(progress)
-        status_text.text(f"Caching posters... {index+1}/{total_movies}")
-
-    progress_bar.empty()
-    status_text.empty()
-    return poster_cache
-
+# ----------------------------
+# Enhanced Poster Fetching with Multiple Fallbacks
+# ----------------------------
 def fetch_poster_with_fallbacks(movie_title):
     """
     Fetch movie poster with multiple fallback options
@@ -158,9 +144,6 @@ def fetch_poster_with_fallbacks(movie_title):
     encoded_title = requests.utils.quote(clean_title[:30])  # Limit length
     return f"https://via.placeholder.com/500x750/1E1E1E/FF4B4B?text={encoded_title}"
 
-# --- Build the cache when the app starts ---
-poster_cache = build_poster_cache()
-
 # ----------------------------
 # ML Model Recommender
 # ----------------------------
@@ -172,8 +155,8 @@ def recommend(movie):
     for i in distances[1:6]:
         movie_title = Movie.iloc[i[0]].title
         recommended_movie_name.append(movie_title)
-        # Use cached poster fetching
-        recommended_movie_Poster.append(poster_cache.get(movie_title, f"https://via.placeholder.com/500x750/1E1E1E/FF4B4B?text=Not+Found"))
+        # Use on-demand cached poster fetching
+        recommended_movie_Poster.append(get_cached_poster(movie_title))
     return recommended_movie_name, recommended_movie_Poster
 
 
